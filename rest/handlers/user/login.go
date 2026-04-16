@@ -29,15 +29,19 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	accessToken, err := util.CreateJWT(h.cnf.JwtSecretKey, util.Payload{
-		Sub:       usr.ID,
-		FirstName: usr.FirstName,
-		LastName:  usr.LastName,
-		Email:     usr.Email,
+		Sub:         usr.ID,
+		FirstName:   usr.FirstName,
+		LastName:    usr.LastName,
+		Email:       usr.Email,
+		IsShopOwner: usr.IsShopOwner,
 	})
 	if err != nil {
 		http.Error(w, "Error creating access token", http.StatusInternalServerError)
 		return
 	}
 
-	util.SendData(w, accessToken, http.StatusCreated)
+	util.SendData(w, loginResponse{
+		Token: accessToken,
+		User:  newUserResponse(usr),
+	}, http.StatusOK)
 }

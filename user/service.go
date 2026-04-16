@@ -28,3 +28,7 @@ func (svc *service) Find(email, pass string) (*domain.User, error) {
 	}
 	return usr, nil
 }
+
+func (svc *service) AdminExists() (bool, error) {
+	return svc.usrRepo.AdminExists()
+}

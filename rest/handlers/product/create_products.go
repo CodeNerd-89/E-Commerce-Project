@@ -22,13 +22,18 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, "Invalid request", 400)
+		util.SendError(w, http.StatusBadRequest, "Invalid request")
+		return
+	}
+
+	if req.Title == "" || req.Description == "" || req.Price < 0 {
+		util.SendError(w, http.StatusBadRequest, "Title, description, and a valid price are required")
 		return
 	}
 	createdProduct, err := h.svc.Create(domain.Product{Title: req.Title, Description: req.Description, Price: req.Price, ImgUrl: req.ImgUrl})
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		util.SendError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 	util.SendData(w, createdProduct, http.StatusCreated)

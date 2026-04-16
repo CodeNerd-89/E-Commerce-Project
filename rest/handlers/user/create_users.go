@@ -4,8 +4,11 @@ import (
 	"ecommerce/domain"
 	"ecommerce/util"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/lib/pq"
 )
 
 type ReqCreateUser struct {
@@ -24,13 +27,28 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		util.SendError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
+
+	if req.IsShopOwner {
+		adminExists, err := h.svc.AdminExists()
+		if err != nil {
+			fmt.Println(err)
+			util.SendError(w, http.StatusInternalServerError, "Internal server error")
+			return
+		}
+
+		if adminExists {
+			util.SendError(w, http.StatusConflict, "Admin account already exists")
+			return
+		}
+	}
+
 	hashedPassword, err := util.HashPassword(req.Password)
 	if err != nil {
 		fmt.Println("error hashing password:", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		util.SendError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
@@ -43,8 +61,13 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			util.SendError(w, http.StatusConflict, "An account with this email already exists")
+			return
+		}
+		util.SendError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
-	util.SendData(w, usr, http.StatusCreated)
+	util.SendData(w, newUserResponse(usr), http.StatusCreated)
 }

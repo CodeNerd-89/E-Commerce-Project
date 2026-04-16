@@ -6,6 +6,11 @@ import (
 )
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middleware.Manager) {
+	mux.Handle("GET /users/admin-status",
+		manager.With(
+			http.HandlerFunc(h.GetAdminStatus),
+		),
+	)
 	mux.Handle("POST /users",
 		manager.With(
 			http.HandlerFunc(h.CreateUser),

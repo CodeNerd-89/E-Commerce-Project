@@ -72,3 +72,15 @@ func (r *UserStore) Find(email, pass string) (*domain.User, error) {
 
 	return &user, nil
 }
+
+func (r *UserStore) AdminExists() (bool, error) {
+	query := `SELECT EXISTS (SELECT 1 FROM users WHERE is_shop_owner = true)`
+
+	var adminExists bool
+	err := r.db.QueryRow(query).Scan(&adminExists)
+	if err != nil {
+		return false, err
+	}
+
+	return adminExists, nil
+}

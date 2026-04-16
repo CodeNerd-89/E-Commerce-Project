@@ -20,7 +20,7 @@ func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	productID := r.PathValue("id")
 	pId, err := strconv.Atoi(productID)
 	if err != nil {
-		http.Error(w, "Invalid product ID", http.StatusBadRequest)
+		util.SendError(w, http.StatusBadRequest, "Invalid product ID")
 		return
 	}
 
@@ -29,13 +29,18 @@ func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	err = decoder.Decode(&req)
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		util.SendError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	if req.Title == "" || req.Description == "" || req.Price < 0 {
+		util.SendError(w, http.StatusBadRequest, "Title, description, and a valid price are required")
 		return
 	}
 	_, err = h.svc.Update(domain.Product{ID: pId, Title: req.Title, Description: req.Description, Price: req.Price, ImgUrl: req.ImgUrl})
 	if err != nil {
-		util.SendData(w, err.Error(), 400)
+		util.SendError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	util.SendData(w, "Successfully updated", 201)
+	util.SendData(w, "Successfully updated", http.StatusOK)
 }
